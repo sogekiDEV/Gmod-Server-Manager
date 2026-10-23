@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs'
-import { join } from 'path'
+import { basename, join } from 'path'
 import { defaultPreset, type ServerPreset } from '@shared/types'
 
 export function parseLegacyPreset(lines: string[]): ServerPreset | null {
@@ -8,7 +8,10 @@ export function parseLegacyPreset(lines: string[]): ServerPreset | null {
 }
 
 export class PresetStore {
-  constructor(private readonly dir: string) {}
+  constructor(
+    private readonly dir: string,
+    private readonly trashDir: string | null = null
+  ) {}
 
   private fileFor(name: string): string {
     const safe = name.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').trim() || 'preset'
@@ -40,7 +43,17 @@ export class PresetStore {
   }
 
   async remove(name: string): Promise<void> {
-    await fs.rm(this.fileFor(name), { force: true })
+    const file = this.fileFor(name)
+    if (this.trashDir) {
+      try {
+        await fs.mkdir(this.trashDir, { recursive: true })
+        await fs.copyFile(file, join(this.trashDir, `${Date.now()}-${basename(file)}`))
+      } catch {
+        await fs.rm(file, { force: true })
+        return
+      }
+    }
+    await fs.rm(file, { force: true })
   }
 
   async importLegacy(folder: string): Promise<number> {

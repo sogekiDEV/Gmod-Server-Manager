@@ -15,7 +15,7 @@ import { computeTiles } from './services/tileLayout'
 import { WindowPlacer, focusWindow } from './services/windowPlacer'
 
 const userData = app.getPath('userData')
-const presets = new PresetStore(join(userData, 'presets'))
+const presets = new PresetStore(join(userData, 'presets'), join(userData, 'backups', 'presets'))
 const backupDir = join(userData, 'backups')
 const server = new ServerController()
 const clients = new ClientController()
